@@ -4,19 +4,7 @@ import Button from './Button';
 import TagSelector from './TagSelector';
 import LocationDetector from './LocationDetector';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
-
-/**
- * RegisterForm Component
- *
- * Complete registration form with all validations:
- * - Username: 3-20 characters, unique
- * - Email: valid email format
- * - Password: minimum 8 characters with strength meter
- * - Phone: Indian format (+91XXXXXXXXXX)
- * - Full Name: required
- * - Preferences: tag selection
- * - Location: hybrid detection + dropdown
- */
+import './styles.css';
 
 // Predefined preference tags
 const PREFERENCE_TAGS = [
@@ -38,14 +26,16 @@ const INDIAN_CITIES = [
   'Hyderabad',
   'Chennai',
   'Kolkata',
+  'Pune',
+  'Patna',
 ];
 
-interface RegisterFormProps {
+export interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  onGoBack?: () => void; // Add optional back navigation
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
-  // Form state
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -57,27 +47,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   });
 
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
-
-  // Error state for each field
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  /**
-   * Handle input field changes
-   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
-  /**
-   * Validate individual field
-   * Returns error message if validation fails, empty string if valid
-   */
   const validateField = (name: string, value: string): string => {
     switch (name) {
       case 'username':
@@ -86,7 +66,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         if (value.length > 20) return 'Username must be at most 20 characters';
         if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscore';
 
-        // Check if username exists in localStorage (mock uniqueness check)
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         if (users.some((u: any) => u.username === value)) {
           return 'Username already taken';
@@ -97,7 +76,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         if (!value) return 'Email is required';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
 
-        // Check if email exists in localStorage (mock uniqueness check)
         const emailUsers = JSON.parse(localStorage.getItem('users') || '[]');
         if (emailUsers.some((u: any) => u.email === value)) {
           return 'Email already registered';
@@ -116,7 +94,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
       case 'phoneNumber':
         if (!value) return 'Phone number is required';
-        // Indian phone format: +91XXXXXXXXXX (10 digits after +91)
         if (!/^\+91[6-9]\d{9}$/.test(value)) {
           return 'Invalid phone format. Use +91XXXXXXXXXX (e.g., +919876543210)';
         }
@@ -136,19 +113,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     }
   };
 
-  /**
-   * Validate all fields before submission
-   */
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
-    // Validate all text fields
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key as keyof typeof formData]);
       if (error) newErrors[key] = error;
     });
 
-    // Validate preferences
     if (selectedPreferences.length === 0) {
       newErrors.preferences = 'Please select at least one preference';
     }
@@ -157,22 +129,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handle form submission
-   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
     if (!validateForm()) {
       return;
     }
 
-    // Create user object
     const newUser = {
       username: formData.username,
       email: formData.email,
-      password: formData.password, // In real app, this would be hashed
+      password: formData.password,
       phoneNumber: formData.phoneNumber,
       fullName: formData.fullName,
       preferences: selectedPreferences,
@@ -180,15 +147,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to localStorage (mock database)
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
 
-    // Success message
     alert(`Registration successful!\nWelcome, ${formData.fullName}!`);
 
-    // Reset form
     setFormData({
       username: '',
       email: '',
@@ -200,22 +164,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     });
     setSelectedPreferences([]);
     setErrors({});
-
-    // Switch to login
     onSwitchToLogin();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-100 flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-2xl p-5 sm:p-6 md:p-8 my-4 sm:my-6">
+    <div className="register-container">
+      <div className="register-card">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-1.5 sm:mb-2">Create Account</h1>
-          <p className="text-sm sm:text-base text-gray-600">Join us today and start exploring</p>
+        <div className="register-header">
+          <h1 className="register-title">Create Account</h1>
+          <p className="register-subtitle">Join us today and start exploring</p>
         </div>
 
         {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-1">
+        <form onSubmit={handleSubmit} className="register-form">
           {/* Username */}
           <FormInput
             label="Username"
@@ -319,19 +281,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           />
 
           {/* Submit Button */}
-          <div className="pt-2 sm:pt-4">
+          <div className="register-submit-section">
             <Button type="submit" variant="primary" fullWidth>
               Create Account
             </Button>
           </div>
 
           {/* Switch to Login */}
-          <p className="mt-5 sm:mt-6 text-center text-xs sm:text-sm text-gray-600">
+          <p className="register-switch-text">
             Already have an account?{' '}
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-blue-600 hover:text-blue-700 active:text-blue-800 font-medium underline-offset-2 hover:underline touch-manipulation"
+              className="register-switch-link"
             >
               Sign In
             </button>

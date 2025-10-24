@@ -1,4 +1,5 @@
 import React from 'react';
+import './styles.css';
 
 /**
  * FormInput Component
@@ -17,7 +18,7 @@ import React from 'react';
  * @param pattern - HTML5 pattern validation
  */
 
-interface FormInputProps {
+export interface FormInputProps {
   label: string;
   type: string;
   name: string;
@@ -43,10 +44,10 @@ const FormInput: React.FC<FormInputProps> = ({
   pattern,
 }) => {
   return (
-    <div className="mb-4 sm:mb-5">
+    <div className="form-input-container">
       {/* Label with required indicator */}
-      <label htmlFor={name} className="block text-sm sm:text-base font-medium text-gray-700 mb-1.5 sm:mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label htmlFor={name} className="form-input-label">
+        {label} {required && <span className="form-input-required">*</span>}
       </label>
 
       {/* Input field */}
@@ -60,16 +61,12 @@ const FormInput: React.FC<FormInputProps> = ({
         required={required}
         maxLength={maxLength}
         pattern={pattern}
-        className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-          error
-            ? 'border-red-500 focus:ring-red-500'
-            : 'border-gray-300 focus:ring-blue-500'
-        }`}
+        className={`form-input ${error ? 'form-input-error' : ''}`}
       />
 
       {/* Error message display */}
       {error && (
-        <p className="mt-1.5 text-xs sm:text-sm text-red-500">{error}</p>
+        <p className="form-input-error-message">{error}</p>
       )}
     </div>
   );
