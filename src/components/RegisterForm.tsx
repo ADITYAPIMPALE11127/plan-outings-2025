@@ -5,7 +5,10 @@ import TagSelector from './TagSelector';
 import LocationDetector from './LocationDetector';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
 import './styles.css';
-
+import { auth, db, googleProvider } from "../firebaseConfig";
+import { signInWithPopup } from "firebase/auth";
+import { ref, get, set } from "firebase/database";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 // Predefined preference tags
 const PREFERENCE_TAGS = [
   'Action Movies',
@@ -32,10 +35,10 @@ const INDIAN_CITIES = [
 
 export interface RegisterFormProps {
   onSwitchToLogin: () => void;
-  onGoBack?: () => void; // Add optional back navigation
+  onGoBack?: () => void; // Optional back navigation
 }
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -52,10 +55,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateField = (name: string, value: string): string => {
@@ -67,9 +67,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscore';
 
         const users = JSON.parse(localStorage.getItem('users') || '[]');
-        if (users.some((u: any) => u.username === value)) {
-          return 'Username already taken';
-        }
+        if (users.some((u: any) => u.username === value)) return 'Username already taken';
         return '';
 
       case 'email':
@@ -77,9 +75,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
 
         const emailUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        if (emailUsers.some((u: any) => u.email === value)) {
-          return 'Email already registered';
-        }
+        if (emailUsers.some((u: any) => u.email === value)) return 'Email already registered';
         return '';
 
       case 'password':
@@ -94,9 +90,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
       case 'phoneNumber':
         if (!value) return 'Phone number is required';
-        if (!/^\+91[6-9]\d{9}$/.test(value)) {
-          return 'Invalid phone format. Use +91XXXXXXXXXX (e.g., +919876543210)';
-        }
+        if (!/^\+91[6-9]\d{9}$/.test(value)) return 'Invalid phone format. Use +91XXXXXXXXXX';
         return '';
 
       case 'fullName':
@@ -115,7 +109,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
-
     Object.keys(formData).forEach((key) => {
       const error = validateField(key, formData[key as keyof typeof formData]);
       if (error) newErrors[key] = error;
@@ -129,30 +122,33 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+  if (!validateForm()) return;
 
-    const newUser = {
+  try {
+    // 1️⃣ Create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
+
+    const user = userCredential.user;
+
+    // 2️⃣ Store additional user info in Realtime DB
+    await set(ref(db, `users/${user.uid}`), {
       username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      phoneNumber: formData.phoneNumber,
       fullName: formData.fullName,
+      phoneNumber: formData.phoneNumber,
       preferences: selectedPreferences,
       location: formData.location,
       createdAt: new Date().toISOString(),
-    };
-
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
+      provider: "email",
+    });
 
     alert(`Registration successful!\nWelcome, ${formData.fullName}!`);
-
     setFormData({
       username: '',
       email: '',
@@ -165,6 +161,38 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     setSelectedPreferences([]);
     setErrors({});
     onSwitchToLogin();
+
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    alert(`Registration failed: ${error.message}`);
+  }
+};
+
+
+  // ✅ Google Registration
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      const userRef = ref(db, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+
+      if (!snapshot.exists()) {
+        await set(userRef, {
+          email: user.email,
+          fullName: user.displayName || "",
+          photoURL: user.photoURL || "",
+          provider: "google",
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      alert(`Welcome ${user.displayName || user.email}!`);
+    } catch (error: any) {
+      console.error("Google Sign-In error:", error);
+      alert("Google Sign-In failed. Please try again.");
+    }
   };
 
   return (
@@ -176,9 +204,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           <p className="register-subtitle">Join us today and start exploring</p>
         </div>
 
+        {/* Back Button */}
+        {onGoBack && (
+          <button type="button" onClick={onGoBack} className="form-back-button">
+            ← Back
+          </button>
+        )}
+
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="register-form">
-          {/* Username */}
           <FormInput
             label="Username"
             type="text"
@@ -191,7 +225,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             maxLength={20}
           />
 
-          {/* Email */}
           <FormInput
             label="Email"
             type="email"
@@ -203,7 +236,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             required
           />
 
-          {/* Full Name */}
           <FormInput
             label="Full Name"
             type="text"
@@ -215,7 +247,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             required
           />
 
-          {/* Phone Number */}
           <FormInput
             label="Phone Number"
             type="tel"
@@ -228,7 +259,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             pattern="^\+91[6-9]\d{9}$"
           />
 
-          {/* Password */}
           <FormInput
             label="Password"
             type="password"
@@ -240,10 +270,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             required
           />
 
-          {/* Password Strength Meter */}
           <PasswordStrengthMeter password={formData.password} />
 
-          {/* Confirm Password */}
           <FormInput
             label="Confirm Password"
             type="password"
@@ -255,7 +283,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             required
           />
 
-          {/* Preferences */}
           <TagSelector
             label="Preferences"
             tags={PREFERENCE_TAGS}
@@ -265,36 +292,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             required
           />
 
-          {/* Location */}
           <LocationDetector
             label="Location"
             cities={INDIAN_CITIES}
             selectedCity={formData.location}
             onChange={(city) => {
               setFormData((prev) => ({ ...prev, location: city }));
-              if (errors.location) {
-                setErrors((prev) => ({ ...prev, location: '' }));
-              }
+              if (errors.location) setErrors((prev) => ({ ...prev, location: '' }));
             }}
             error={errors.location}
             required
           />
 
-          {/* Submit Button */}
           <div className="register-submit-section">
             <Button type="submit" variant="primary" fullWidth>
               Create Account
             </Button>
           </div>
 
-          {/* Switch to Login */}
+          {/* Google Sign-In */}
+          <div className="google-login-container">
+            <Button type="button" variant="secondary" fullWidth onClick={handleGoogleSignIn}>
+              <img
+                src="https://developers.google.com/identity/images/g-logo.png"
+                alt="Google logo"
+                style={{ width: "18px", marginRight: "8px", verticalAlign: "middle" }}
+              />
+              Sign up with Google
+            </Button>
+          </div>
+
           <p className="register-switch-text">
             Already have an account?{' '}
-            <button
-              type="button"
-              onClick={onSwitchToLogin}
-              className="register-switch-link"
-            >
+            <button type="button" onClick={onSwitchToLogin} className="register-switch-link">
               Sign In
             </button>
           </p>
