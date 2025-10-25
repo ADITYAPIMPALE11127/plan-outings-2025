@@ -17,6 +17,7 @@ import 'react-toastify/dist/ReactToastify.css';
  * - Dashboard (Entry Page)
  * - Login Form
  * - Registration Form
+ * - Chat Interface
  *
  * Supports browser back/forward navigation and maintains history
  */
@@ -36,10 +37,9 @@ function App() {
         setCurrentView('chat');
         setHistory(['chat']);
       } else {
-        if (currentView === 'chat') {
-          setCurrentView('dashboard');
-          setHistory(['dashboard']);
-        }
+        // When user logs out, redirect to dashboard
+        setCurrentView('dashboard');
+        setHistory(['dashboard']);
       }
       setLoading(false);
     });
@@ -64,6 +64,12 @@ function App() {
 
   const handleLoginSuccess = () => {
     navigateTo('chat');
+  };
+
+  const handleLogout = () => {
+    // This will trigger the onAuthStateChanged which will redirect to dashboard
+    setCurrentView('dashboard');
+    setHistory(['dashboard']);
   };
 
   useEffect(() => {
@@ -155,7 +161,7 @@ function App() {
         />
       )}
       {currentView === 'chat' && user && (
-        <ChatInterface />
+        <ChatInterface onLogout={handleLogout} />
       )}
     </div>
   );

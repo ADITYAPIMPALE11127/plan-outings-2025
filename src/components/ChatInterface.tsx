@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../firebaseConfig';
-import { ref, push, onValue, off, set, serverTimestamp } from 'firebase/database';
+import { ref, push, onValue, off, set } from 'firebase/database';
 import { signOut } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import './styles.css';
@@ -20,7 +20,11 @@ interface UserData {
   preferences?: string[];
 }
 
-const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  onLogout?: () => void; // Callback for when user logs out
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -112,6 +116,11 @@ const ChatInterface: React.FC = () => {
     try {
       await signOut(auth);
       toast.success('Logged out successfully');
+      
+      // Call the onLogout callback if provided
+      if (onLogout) {
+        onLogout();
+      }
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Failed to log out');
