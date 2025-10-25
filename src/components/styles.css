@@ -2820,163 +2820,755 @@ html {
 
 /* Emoji Picker Styles */
 .emoji-picker-container {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    display: inline-block;
 }
 
 .emoji-picker-button {
-  background: none;
-  border: none;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .emoji-picker-button:hover {
-  background: #f3f4f6;
+    background: #f3f4f6;
 }
 
 .emoji-icon {
-  display: inline-block;
-  transition: transform 0.2s;
+    display: inline-block;
+    transition: transform 0.2s;
 }
 
 .emoji-picker-button:hover .emoji-icon {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .emoji-picker-dropdown {
-  position: absolute;
-  z-index: 1000;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e5e7eb;
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
 }
 
 /* Override emoji picker styles for better integration */
 .EmojiPickerReact {
-  --epr-emoji-size: 24px;
-  --epr-emoji-gap: 6px;
-  --epr-category-navigation-button-size: 24px;
-  --epr-search-input-height: 40px;
+    --epr-emoji-size: 24px;
+    --epr-emoji-gap: 6px;
+    --epr-category-navigation-button-size: 24px;
+    --epr-search-input-height: 40px;
 }
 
 .EmojiPickerReact .epr-main {
-  border-radius: 8px;
+    border-radius: 8px;
 }
 
 .EmojiPickerReact .epr-search-container input {
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
 }
 
 .EmojiPickerReact .epr-emoji:hover {
-  background: #f3f4f6;
-  border-radius: 6px;
+    background: #f3f4f6;
+    border-radius: 6px;
 }
 
 /* Chat Input Wrapper */
 .chat-input-wrapper {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
 }
 
 .chat-input {
-  width: 100%;
-  padding: 12px 50px 12px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-  background: white;
+    width: 100%;
+    padding: 12px 50px 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
 }
 
 .chat-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Position emoji button inside input */
 .chat-input-wrapper .emoji-picker-container {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* Character Counter */
 .character-counter {
-  text-align: right;
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 4px;
+    text-align: right;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 4px;
 }
 
 .character-counter.warning {
-  color: #f59e0b;
+    color: #f59e0b;
 }
 
 .character-counter.error {
-  color: #ef4444;
+    color: #ef4444;
 }
 
 /* Message Text with Emoji Support */
 .chat-message-text {
-  font-size: 14px;
-  line-height: 1.5;
-  word-wrap: break-word;
-  white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .chat-message-text .emoji {
-  font-size: 1.2em;
-  vertical-align: middle;
+    font-size: 1.2em;
+    vertical-align: middle;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .emoji-picker-dropdown {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90vw;
-    max-width: 350px;
-    max-height: 80vh;
-  }
-  
-  .EmojiPickerReact {
-    width: 100% !important;
-  }
-  
-  .chat-input-wrapper .emoji-picker-container {
-    right: 12px;
-  }
+    .emoji-picker-dropdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90vw;
+        max-width: 350px;
+        max-height: 80vh;
+    }
+
+    .EmojiPickerReact {
+        width: 100% !important;
+    }
+
+    .chat-input-wrapper .emoji-picker-container {
+        right: 12px;
+    }
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .emoji-picker-dropdown {
-    background: #1f2937;
-    border-color: #374151;
-  }
-  
-  .EmojiPickerReact {
-    --epr-bg-color: #1f2937;
-    --epr-text-color: #f9fafb;
-    --epr-category-label-bg-color: #1f2937;
-  }
-  
-  .emoji-picker-button:hover {
-    background: #374151;
-  }
+    .emoji-picker-dropdown {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .EmojiPickerReact {
+        --epr-bg-color: #1f2937;
+        --epr-text-color: #f9fafb;
+        --epr-category-label-bg-color: #1f2937;
+    }
+
+    .emoji-picker-button:hover {
+        background: #374151;
+    }
+}
+
+/* Poll Creation Modal Styles */
+.poll-modal {
+    max-width: 500px;
+}
+
+.poll-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #111827;
+}
+
+.poll-info {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.poll-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.poll-option-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-radio-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+}
+
+.radio-preview {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    background: white;
+}
+
+.poll-option-input input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.remove-option-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: 18px;
+}
+
+.remove-option-btn:hover {
+    background: #f3f4f6;
+    color: #ef4444;
+}
+
+.add-option-btn {
+    background: none;
+    border: 1px dashed #d1d5db;
+    color: #6b7280;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.add-option-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.options-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: right;
+}
+
+/* Poll Preview */
+.poll-preview {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.poll-preview h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.preview-poll {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.preview-question {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #111827;
+}
+
+.preview-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.preview-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f9fafb;
+    border-radius: 6px;
+}
+
+.preview-radio {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    background: white;
+}
+
+.preview-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Poll Message Styles */
+.poll-message {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 400px;
+}
+
+.poll-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.poll-icon {
+    font-size: 1.2rem;
+}
+
+.poll-title {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.poll-question {
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #111827;
+    line-height: 1.4;
+}
+
+.poll-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.poll-option {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.poll-option:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.poll-option.selected {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+}
+
+.poll-option.winning {
+    border-color: #10b981;
+}
+
+.option-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.option-radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radio-circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.radio-circle.checked {
+    border-color: #3b82f6;
+    background: #3b82f6;
+}
+
+.radio-dot {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+}
+
+.option-text {
+    flex: 1;
+    font-size: 14px;
+    color: #111827;
+}
+
+.option-results {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.result-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.result-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.poll-option.winning .result-fill {
+    background: #10b981;
+}
+
+.result-stats {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    min-width: 60px;
+}
+
+.percentage {
+    font-weight: 600;
+    color: #111827;
+}
+
+.poll-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.voter-avatars {
+    display: flex;
+    align-items: center;
+    gap: -4px;
+}
+
+.voter-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    border: 2px solid white;
+}
+
+.voter-avatar:nth-child(2) {
+    background: #10b981;
+    margin-left: -4px;
+}
+
+.voter-avatar:nth-child(3) {
+    background: #f59e0b;
+    margin-left: -4px;
+}
+
+.more-voters {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-left: 4px;
+}
+
+.poll-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Poll Create Button */
+.poll-create-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.poll-create-button:hover {
+    background: #f3f4f6;
+}
+
+/* Chat Input Wrapper with Multiple Buttons */
+.chat-input-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.chat-input {
+    width: 100%;
+    padding: 12px 90px 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.chat-input-wrapper .poll-create-button {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.chat-input-wrapper .emoji-picker-container {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Character Count in Forms */
+.character-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .poll-modal {
+        width: 95vw;
+        max-width: none;
+    }
+
+    .poll-message {
+        max-width: 300px;
+    }
+
+    .chat-input {
+        padding: 12px 80px 12px 16px;
+    }
+}
+
+/* Poll Loading State */
+.poll-message.loading {
+    opacity: 0.7;
+}
+
+.poll-message.loading .poll-question {
+    color: #6b7280;
+    font-style: italic;
+}
+
+.notifications-container {
+    position: relative;
+    display: inline-block;
+}
+
+.notifications-toggle {
+    position: relative;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 350px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+}
+
+.notifications-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.notifications-header button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.notifications-list {
+    padding: 0.5rem;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.notification-unread {
+    background-color: #e3f2fd;
+    border-left-color: #2196f3;
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    margin-top: 0.1rem;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    word-wrap: break-word;
+}
+
+.notification-preview {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    font-style: italic;
+    word-wrap: break-word;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+.notification-delete {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 0.25rem;
+    margin-left: 0.5rem;
+}
+
+.notification-delete:hover {
+    color: #ff4444;
+}
+
+.no-notifications {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-style: italic;
 }

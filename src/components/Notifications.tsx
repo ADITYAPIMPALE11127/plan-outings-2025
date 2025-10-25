@@ -8,9 +8,12 @@ interface Notification {
   type: string;
   groupId: string;
   groupName: string;
-  invitedBy: string;
-  invitedByName: string;
+  invitedBy?: string;
+  invitedByName?: string;
+  sentBy?: string;
+  sentByName?: string;
   message: string;
+  messageContent?: string;
   timestamp: string;
   read: boolean;
 }
@@ -65,6 +68,28 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, onGroupSelec
     setIsOpen(false);
   };
 
+  const deleteNotification = async (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+    
+    try {
+      await set(ref(db, `notifications/${currentUser.uid}/${notificationId}`), null);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'group_invitation':
+        return '👥';
+      case 'new_message':
+        return '💬';
+      default:
+        return '🔔';
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -96,10 +121,26 @@ const Notifications: React.FC<NotificationsProps> = ({ currentUser, onGroupSelec
                   className={`notification-item ${!notification.read ? 'notification-unread' : ''}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="notification-message">{notification.message}</div>
-                  <div className="notification-time">
-                    {new Date(notification.timestamp).toLocaleDateString()}
+                  <div className="notification-icon">
+                    {getNotificationIcon(notification.type)}
                   </div>
+                  <div className="notification-content">
+                    <div className="notification-message">{notification.message}</div>
+                    {notification.messageContent && (
+                      <div className="notification-preview">
+                        "{notification.messageContent}"
+                      </div>
+                    )}
+                    <div className="notification-time">
+                      {new Date(notification.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                  <button 
+                    className="notification-delete"
+                    onClick={(e) => deleteNotification(notification.id, e)}
+                  >
+                    ×
+                  </button>
                 </div>
               ))
             )}
