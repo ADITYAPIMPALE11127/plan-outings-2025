@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ref, set, remove } from 'firebase/database';
+import { ref, set, remove, onValue, off, push } from 'firebase/database'; // Add push import
 import { db } from '../firebaseConfig';
 import { toast } from 'react-toastify';
 import './styles.css';
+
+interface User {
+  uid: string;
+  email: string;
+  fullName: string;
+  username?: string;
+}
 
 interface Group {
   id: string;
@@ -32,6 +39,39 @@ const GroupManagementModal: React.FC<GroupManagementModalProps> = ({
   const [groupDescription, setGroupDescription] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [currentMembers, setCurrentMembers] = useState<User[]>([]);
+
+  // Fetch all users and current group members when modal opens
+  useEffect(() => {
+    if (!isOpen || !group) return;
+
+    // Fetch all users
+    const usersRef = ref(db, 'users');
+    const unsubscribeUsers = onValue(usersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const usersList: User[] = Object.keys(data).map(key => ({
+          uid: key,
+          ...data[key]
+        }));
+        setAllUsers(usersList);
+        
+        // Set current members with user data
+        const membersWithData = group.members
+          .map(memberId => usersList.find(user => user.uid === memberId))
+          .filter(Boolean) as User[];
+        setCurrentMembers(membersWithData);
+      }
+    });
+
+    return () => {
+      off(usersRef, 'value', unsubscribeUsers);
+    };
+  }, [isOpen, group]);
 
   useEffect(() => {
     if (group) {
@@ -40,7 +80,93 @@ const GroupManagementModal: React.FC<GroupManagementModalProps> = ({
     }
     setIsEditing(false);
     setIsDeleting(false);
+    setSearchQuery('');
+    setSearchResults([]);
   }, [group]);
+
+  const handleSearchUsers = (query: string) => {
+    setSearchQuery(query);
+    
+    if (query.length < 1) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    // Search through all users excluding current members
+    const filteredUsers = allUsers.filter(user => 
+      (user.username?.toLowerCase().includes(query.toLowerCase()) ||
+       user.fullName.toLowerCase().includes(query.toLowerCase()) ||
+       user.email.toLowerCase().includes(query.toLowerCase())) &&
+      !group?.members.includes(user.uid) // Exclude current members
+    );
+    
+    setSearchResults(filteredUsers);
+    setIsSearching(false);
+  };
+
+  const handleAddMember = async (user: User) => {
+    if (!group || !isAdmin) return;
+
+    try {
+      const groupRef = ref(db, `groups/${group.id}`);
+      const updatedMembers = [...group.members, user.uid];
+      
+      await set(groupRef, {
+        ...group,
+        members: updatedMembers,
+      });
+
+      // Create notification for the added member
+      const notificationsRef = ref(db, `notifications/${user.uid}`);
+      const newNotificationRef = push(notificationsRef); // Use the imported push function
+      await set(newNotificationRef, {
+        type: 'group_invitation',
+        groupId: group.id,
+        groupName: group.name,
+        invitedBy: currentUser?.uid,
+        invitedByName: currentUser?.displayName || currentUser?.email || 'Group Admin',
+        message: `You've been added to the group "${group.name}"`,
+        timestamp: new Date().toISOString(),
+        read: false,
+      });
+
+      toast.success(`Added ${user.username || user.fullName} to the group!`);
+      setSearchQuery('');
+      setSearchResults([]);
+      onGroupUpdate();
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast.error('Failed to add member to group');
+    }
+  };
+
+  const handleRemoveMember = async (user: User) => {
+    if (!group || !isAdmin) return;
+
+    // Don't allow removing the admin
+    if (user.uid === group.admin) {
+      toast.error('Cannot remove the group admin');
+      return;
+    }
+
+    try {
+      const groupRef = ref(db, `groups/${group.id}`);
+      const updatedMembers = group.members.filter(memberId => memberId !== user.uid);
+      
+      await set(groupRef, {
+        ...group,
+        members: updatedMembers,
+      });
+
+      toast.success(`Removed ${user.username || user.fullName} from the group`);
+      onGroupUpdate();
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member from group');
+    }
+  };
 
   const handleSaveChanges = async () => {
     if (!group || !groupName.trim() || !groupDescription.trim()) return;
@@ -94,12 +220,19 @@ const GroupManagementModal: React.FC<GroupManagementModalProps> = ({
   const resetForm = () => {
     setIsEditing(false);
     setIsDeleting(false);
+    setSearchQuery('');
+    setSearchResults([]);
     onClose();
   };
 
   if (!isOpen || !group) return null;
 
   const isAdmin = group.admin === currentUser?.uid;
+
+  // Get display name for user
+  const getUserDisplayName = (user: User) => {
+    return user.username ? `@${user.username}` : user.fullName;
+  };
 
   return (
     <div className="modal-overlay">
@@ -173,6 +306,87 @@ const GroupManagementModal: React.FC<GroupManagementModalProps> = ({
             )}
           </div>
 
+          {/* Group Members Management Section - Only for Admin */}
+          {isAdmin && (
+            <div className="management-section">
+              <h3>Manage Members</h3>
+              
+              {/* Add New Members */}
+              <div className="form-group">
+                <label>Add New Members</label>
+                <div className="member-search-container">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchUsers(e.target.value)}
+                    placeholder="Search users by username, name, or email"
+                    disabled={!isAdmin}
+                  />
+                  
+                  {isSearching && <div className="search-loading">Searching...</div>}
+                  
+                  {searchResults.length > 0 && (
+                    <div className="search-results">
+                      {searchResults.map(user => (
+                        <div
+                          key={user.uid}
+                          className="search-result-item"
+                          onClick={() => handleAddMember(user)}
+                        >
+                          <div className="user-info">
+                            <span className="user-name">{user.fullName}</span>
+                            <span className="user-email">{user.email}</span>
+                            {user.username && (
+                              <span className="user-username">@{user.username}</span>
+                            )}
+                          </div>
+                          <button type="button" className="add-user-btn">+</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchQuery.length > 0 && searchResults.length === 0 && !isSearching && (
+                    <div className="no-results">
+                      No users found matching "{searchQuery}"
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Current Members List */}
+              <div className="current-members">
+                <h4>Current Members ({currentMembers.length})</h4>
+                <div className="members-list">
+                  {currentMembers.map(member => (
+                    <div 
+                      key={member.uid} 
+                      className={`member-tag ${
+                        member.uid === group.admin ? 'member-tag-admin' : ''
+                      } ${member.uid === currentUser?.uid ? 'member-tag-current' : ''}`}
+                    >
+                      <span>
+                        {getUserDisplayName(member)}
+                        {member.uid === group.admin && ' (Admin)'}
+                        {member.uid === currentUser?.uid && ' (You)'}
+                      </span>
+                      {member.uid !== group.admin && member.uid !== currentUser?.uid && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(member)}
+                          className="remove-member-btn"
+                          title={`Remove ${getUserDisplayName(member)}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Group Statistics Section */}
           <div className="management-section">
             <h3>Group Statistics</h3>
@@ -245,11 +459,27 @@ const GroupManagementModal: React.FC<GroupManagementModalProps> = ({
           {/* For Non-Admin Users */}
           {!isAdmin && (
             <div className="management-section">
-              <h3>Group Options</h3>
+              <h3>Group Members</h3>
+              <div className="members-list">
+                {currentMembers.map(member => (
+                  <div 
+                    key={member.uid} 
+                    className={`member-tag ${
+                      member.uid === group.admin ? 'member-tag-admin' : ''
+                    } ${member.uid === currentUser?.uid ? 'member-tag-current' : ''}`}
+                  >
+                    <span>
+                      {getUserDisplayName(member)}
+                      {member.uid === group.admin && ' (Admin)'}
+                      {member.uid === currentUser?.uid && ' (You)'}
+                    </span>
+                  </div>
+                ))}
+              </div>
               <div className="non-admin-message">
                 <p>
-                  Only group administrators can modify group information and settings.
-                  Please contact the group admin if you need changes.
+                  Only group administrators can add or remove members. 
+                  Please contact the group admin if you want to add someone.
                 </p>
               </div>
             </div>

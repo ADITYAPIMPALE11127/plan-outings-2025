@@ -2605,174 +2605,213 @@ html {
         flex-direction: column;
     }
 }
+
 /* Enhanced Search Styles */
 .no-results {
-  padding: 12px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 0.875rem;
-  background: #f9fafb;
-  border-radius: 0 0 6px 6px;
-  border: 1px solid #e5e7eb;
-  border-top: none;
+    padding: 12px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+    background: #f9fafb;
+    border-radius: 0 0 6px 6px;
+    border: 1px solid #e5e7eb;
+    border-top: none;
 }
 
 .search-tips {
-  margin-top: 12px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-radius: 6px;
-  border-left: 4px solid #0ea5e9;
+    margin-top: 12px;
+    padding: 12px;
+    background: #f0f9ff;
+    border-radius: 6px;
+    border-left: 4px solid #0ea5e9;
 }
 
 .search-tips p {
-  margin: 0 0 8px 0;
-  font-size: 0.875rem;
-  color: #0369a1;
+    margin: 0 0 8px 0;
+    font-size: 0.875rem;
+    color: #0369a1;
 }
 
 .search-tips ul {
-  margin: 0;
-  padding-left: 16px;
-  font-size: 0.8rem;
-  color: #0369a1;
+    margin: 0;
+    padding-left: 16px;
+    font-size: 0.8rem;
+    color: #0369a1;
 }
 
 .search-tips li {
-  margin-bottom: 4px;
+    margin-bottom: 4px;
 }
 
 /* Enhanced User Info in Search Results */
 .search-result-item .user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
 }
 
 .user-name {
-  font-weight: 500;
-  color: #111827;
+    font-weight: 500;
+    color: #111827;
 }
 
 .user-email {
-  font-size: 0.75rem;
-  color: #6b7280;
+    font-size: 0.75rem;
+    color: #6b7280;
 }
 
 .user-username {
-  font-size: 0.75rem;
-  color: #8b5cf6;
-  font-weight: 500;
-  background: #f3f4f6;
-  padding: 1px 6px;
-  border-radius: 10px;
-  display: inline-block;
+    font-size: 0.75rem;
+    color: #8b5cf6;
+    font-weight: 500;
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 10px;
+    display: inline-block;
 }
 
 /* Member Tags with Better Styling */
 .member-tag {
-  display: flex;
-  align-items: center;
-  background: #f3f4f6;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.875rem;
-  gap: 6px;
-  border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    background: #f3f4f6;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.875rem;
+    gap: 6px;
+    border: 1px solid #e5e7eb;
 }
 
 .member-tag-admin {
-  background: #dbeafe;
-  border-color: #3b82f6;
+    background: #dbeafe;
+    border-color: #3b82f6;
 }
 
 .remove-member-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 0;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: #6b7280;
-  transition: all 0.2s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #6b7280;
+    transition: all 0.2s;
 }
 
 .remove-member-btn:hover {
-  background: #ef4444;
-  color: white;
+    background: #ef4444;
+    color: white;
 }
 
 /* Search Input Improvements */
 .member-search-container input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.2s;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
 }
 
 .member-search-container input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Search Results Scroll */
 .search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  max-height: 200px;
-  overflow-y: auto;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .search-result-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #f3f4f6;
-  transition: background-color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
 }
 
 .search-result-item:hover {
-  background: #f9fafb;
+    background: #f9fafb;
 }
 
 .search-result-item:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 .add-user-btn {
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
 }
 
 .add-user-btn:hover {
-  background: #059669;
+    background: #059669;
+}
+
+/* Current Members Section */
+.current-members {
+    margin-top: 16px;
+}
+
+.current-members h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.member-tag-current {
+    background: #ecfdf5;
+    border-color: #10b981;
+}
+
+/* Management Section Improvements */
+.management-section .member-search-container {
+    margin-bottom: 16px;
+}
+
+/* Responsive Design for Management Modal */
+@media (max-width: 768px) {
+    .group-management-content {
+        padding: 0 16px;
+    }
+
+    .management-section {
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }
