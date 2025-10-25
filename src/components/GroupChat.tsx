@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ref, push, set, onValue, off } from 'firebase/database';
 import { db } from '../firebaseConfig';
 import GroupManagementModal from './GroupManagementModal';
+import EmojiPickerComponent from './EmojiPicker'; // Updated import name
 import './styles.css';
 
 interface Message {
@@ -19,7 +20,7 @@ interface Group {
   description: string;
   admin: string;
   members: string[];
-  createdAt: string; // Add this missing property
+  createdAt: string;
 }
 
 interface GroupChatProps {
@@ -98,6 +99,15 @@ const GroupChat: React.FC<GroupChatProps> = ({
     }
   };
 
+  const handleEmojiClick = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    // Focus back on input after emoji selection
+    const input = document.querySelector('.chat-input') as HTMLInputElement;
+    if (input) {
+      input.focus();
+    }
+  };
+
   const isAdmin = group.admin === currentUser?.uid;
 
   return (
@@ -166,14 +176,20 @@ const GroupChat: React.FC<GroupChatProps> = ({
 
       <form onSubmit={handleSendMessage} className="group-chat-input-form">
         <div className="chat-input-container">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={`Suggest an outing idea in ${group.name}...`}
-            className="chat-input"
-            maxLength={500}
-          />
+          <div className="chat-input-wrapper">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={`Suggest an outing idea in ${group.name}...`}
+              className="chat-input"
+              maxLength={500}
+            />
+            <EmojiPickerComponent 
+              onEmojiClick={handleEmojiClick}
+              position="top"
+            />
+          </div>
           <button
             type="submit"
             disabled={!newMessage.trim()}
@@ -181,6 +197,11 @@ const GroupChat: React.FC<GroupChatProps> = ({
           >
             <span className="chat-send-icon">→</span>
           </button>
+        </div>
+        
+        {/* Character counter */}
+        <div className="character-counter">
+          {newMessage.length}/500
         </div>
       </form>
     </div>
