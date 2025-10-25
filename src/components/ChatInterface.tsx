@@ -1,35 +1,45 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebaseConfig';
-import { ref, push, onValue, off, set } from 'firebase/database';
+import { ref, onValue, off, set, push } from 'firebase/database';
 import { signOut } from 'firebase/auth';
 import { toast } from 'react-toastify';
+import GroupCreationModal from './GroupCreationModal';
+import GroupList from './GroupList';
+import GroupChat from './GroupChat';
 import './styles.css';
 
-interface Message {
-  id: string;
-  text: string;
-  userId: string;
-  userName: string;
-  timestamp: any;
-}
-
 interface UserData {
+  uid: string;
   fullName: string;
   email: string;
+  username?: string;
   location?: string;
   preferences?: string[];
 }
 
-interface ChatInterfaceProps {
-  onLogout?: () => void; // Callback for when user logs out
+interface Group {
+  id: string;
+  name: string;
+  description: string;
+  admin: string;
+  members: string[];
+  createdAt: string;
 }
 
+interface ChatInterfaceProps {
+  onLogout?: () => void;
+}
+
+type ViewMode = 'groups' | 'group-chat';
+
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('groups');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -39,7 +49,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
           const userRef = ref(db, 'users/' + currentUser.uid);
           onValue(userRef, (snapshot) => {
             if (snapshot.exists()) {
-              setUserData(snapshot.val() as UserData);
+              const data = snapshot.val();
+              setUserData({
+                uid: currentUser.uid,
+                ...data
+              });
             }
             setLoading(false);
           });
@@ -56,71 +70,106 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
   }, [currentUser]);
 
   useEffect(() => {
-    const messagesRef = ref(db, 'messages');
+    if (!currentUser) return;
+
+    const groupsRef = ref(db, 'groups');
     
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
+    const unsubscribe = onValue(groupsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const msgs: Message[] = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        })).sort((a, b) => {
-          // Sort by timestamp
-          const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-          const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-          return timeA - timeB;
-        });
-        setMessages(msgs);
+        const userGroups: Group[] = Object.keys(data)
+          .map(key => ({ id: key, ...data[key] }))
+          .filter(group => group.members.includes(currentUser.uid))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        setGroups(userGroups);
       } else {
-        setMessages([]);
+        setGroups([]);
       }
     });
 
     return () => {
-      off(messagesRef, 'value', unsubscribe);
+      off(groupsRef, 'value', unsubscribe);
     };
-  }, []);
+  }, [currentUser, refreshTrigger]); // Add refreshTrigger to dependencies
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newMessage.trim() || !currentUser) return;
+  const handleCreateGroup = async (groupData: {
+    name: string;
+    description: string;
+    members: string[];
+  }) => {
+    if (!currentUser) return;
 
     try {
-      const messagesRef = ref(db, 'messages');
-      const newMessageRef = push(messagesRef);
+      const groupsRef = ref(db, 'groups');
+      const newGroupRef = push(groupsRef);
       
-      await set(newMessageRef, {
-        text: newMessage.trim(),
-        userId: currentUser.uid,
-        userName: userData?.fullName || currentUser.email || 'Anonymous',
-        timestamp: new Date().toISOString(),
-      });
+      const newGroup = {
+        name: groupData.name,
+        description: groupData.description,
+        admin: currentUser.uid,
+        members: groupData.members, // Already includes admin + selected members
+        createdAt: new Date().toISOString(),
+      };
 
-      setNewMessage('');
+      await set(newGroupRef, newGroup);
+
+      // Create notifications for added members (excluding admin)
+      const membersToNotify = groupData.members.filter(memberId => memberId !== currentUser.uid);
+      
+      for (const memberId of membersToNotify) {
+        const notificationRef = push(ref(db, `notifications/${memberId}`));
+        await set(notificationRef, {
+          type: 'group_invitation',
+          groupId: newGroupRef.key,
+          groupName: groupData.name,
+          invitedBy: currentUser.uid,
+          invitedByName: userData?.fullName || 'Someone',
+          message: `You've been added to the group "${groupData.name}"`,
+          timestamp: new Date().toISOString(),
+          read: false,
+        });
+      }
+      
+      toast.success(`Group "${groupData.name}" created successfully!`);
+      setIsCreateModalOpen(false);
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      console.error('Error creating group:', error);
+      toast.error('Failed to create group');
     }
+  };
+
+  const handleGroupUpdate = () => {
+    // Trigger refresh of groups list
+    setRefreshTrigger(prev => prev + 1);
+    // If we're in group chat view and the group was deleted, go back to groups
+    if (viewMode === 'group-chat') {
+      const groupStillExists = groups.some(g => g.id === selectedGroup?.id);
+      if (!groupStillExists) {
+        setSelectedGroup(null);
+        setViewMode('groups');
+      }
+    }
+  };
+
+  const handleSelectGroup = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group) {
+      setSelectedGroup(group);
+      setViewMode('group-chat');
+    }
+  };
+
+  const handleBackToGroups = () => {
+    setSelectedGroup(null);
+    setViewMode('groups');
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       toast.success('Logged out successfully');
-      
-      // Call the onLogout callback if provided
-      if (onLogout) {
-        onLogout();
-      }
+      if (onLogout) onLogout();
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Failed to log out');
@@ -137,15 +186,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
 
   return (
     <div className="chat-container">
+      {/* Header */}
       <div className="chat-header">
         <div className="chat-header-content">
           <div className="chat-header-left">
             <h1 className="chat-title">Group Outing Planner</h1>
-            <p className="chat-subtitle">Plan your next adventure together</p>
+            <p className="chat-subtitle">
+              {viewMode === 'groups' ? 'Manage your groups' : selectedGroup?.name}
+            </p>
           </div>
           <div className="chat-header-right">
             <div className="chat-user-info">
-              <span className="chat-user-name">{userData?.fullName || 'User'}</span>
+              <span className="chat-user-name">
+                {userData?.fullName || 'User'}
+                {userData?.username && ` @${userData.username}`}
+              </span>
               {userData?.location && (
                 <span className="chat-user-location">{userData.location}</span>
               )}
@@ -157,60 +212,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      <div className="chat-messages">
-        {messages.length === 0 ? (
-          <div className="chat-empty">
-            <div className="chat-empty-icon">💬</div>
-            <h3>Start the conversation!</h3>
-            <p>Be the first to suggest an outing idea</p>
-          </div>
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`chat-message ${
-                message.userId === currentUser?.uid ? 'chat-message-own' : 'chat-message-other'
-              }`}
-            >
-              <div className="chat-message-content">
-                {message.userId !== currentUser?.uid && (
-                  <div className="chat-message-author">{message.userName}</div>
-                )}
-                <div className="chat-message-text">{message.text}</div>
-                <div className="chat-message-time">
-                  {message.timestamp
-                    ? new Date(message.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : 'Sending...'}
-                </div>
-              </div>
+      {/* Main Content */}
+      <div className="chat-main-content">
+        {viewMode === 'groups' && (
+          <div className="groups-view">
+            <div className="groups-header">
+              <h2>Your Groups</h2>
+              <button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="create-group-btn"
+              >
+                + Create New Group
+              </button>
             </div>
-          ))
+            
+            <GroupList
+              groups={groups}
+              onSelectGroup={handleSelectGroup}
+              currentUser={currentUser}
+            />
+          </div>
         )}
-        <div ref={messagesEndRef} />
+
+        {viewMode === 'group-chat' && selectedGroup && (
+          <GroupChat
+            group={selectedGroup}
+            currentUser={currentUser}
+            userData={userData}
+            onBack={handleBackToGroups}
+            onGroupUpdate={handleGroupUpdate}
+          />
+        )}
       </div>
 
-      <form onSubmit={handleSendMessage} className="chat-input-form">
-        <div className="chat-input-container">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Suggest an outing idea..."
-            className="chat-input"
-            maxLength={500}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="chat-send-button"
-          >
-            <span className="chat-send-icon">→</span>
-          </button>
-        </div>
-      </form>
+      {/* Group Creation Modal */}
+      <GroupCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateGroup={handleCreateGroup}
+        currentUser={currentUser}
+        userData={userData}
+      />
     </div>
   );
 };
