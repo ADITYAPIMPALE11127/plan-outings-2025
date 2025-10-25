@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import FormInput from './FormInput';
 import Button from './Button';
 import './styles.css';
-import { auth, db, googleProvider } from "../firebaseConfig"; 
-import { signInWithRedirect, getRedirectResult } from "firebase/auth";
-import { ref, get, set } from "firebase/database"; 
+import { auth, db, googleProvider } from "../firebaseConfig";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { toast } from 'react-toastify'; 
 
 export interface LoginFormProps {
   onSwitchToRegister: () => void;
-  onGoBack?: () => void; // Optional back navigation
+  onGoBack?: () => void;
+  onLoginSuccess?: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack, onLoginSuccess }) => {
   const [formData, setFormData] = useState({
-    usernameOrEmail: '',
+    email: '',
     password: '',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -28,7 +30,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack }) =
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
-    if (!formData.usernameOrEmail.trim()) newErrors.usernameOrEmail = 'Username or email is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.password) newErrors.password = 'Password is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -38,87 +40,102 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack }) =
     e.preventDefault();
     if (!validateForm()) return;
 
+    const toastId = toast.loading('Signing in...');
+
     try {
-      const usersRef = ref(db, 'users');
-      const snapshot = await get(usersRef);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
 
-      if (!snapshot.exists()) {
-        setLoginError('No users found');
-        return;
-      }
+      const user = userCredential.user;
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-      const usersData = snapshot.val();
-      let userFound = null;
-
-      for (const key in usersData) {
-        const user = usersData[key];
-        if (
-          (user.username === formData.usernameOrEmail || user.email === formData.usernameOrEmail) &&
-          user.password === formData.password
-        ) {
-          userFound = user;
-          break;
-        }
-      }
-
-      if (userFound) {
-        alert(
-          `Login successful!\n\nWelcome back, ${userFound.fullName}!\n\nYour Details:\n` +
-          `Username: ${userFound.username}\n` +
-          `Email: ${userFound.email}\n` +
-          `Phone: ${userFound.phoneNumber}\n` +
-          `Location: ${userFound.location}\n` +
-          `Preferences: ${userFound.preferences.join(', ')}`
-        );
-        setFormData({ usernameOrEmail: '', password: '' });
-        setErrors({});
-        setLoginError('');
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        toast.update(toastId, {
+          render: `Welcome back, ${userData.fullName}!`,
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+        });
       } else {
-        setLoginError('Invalid username/email or password');
+        toast.update(toastId, {
+          render: 'Welcome back!',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
-    } catch (error) {
-      console.error("Firebase login error:", error);
-      setLoginError('Login failed. Try again.');
+
+      setFormData({ email: '', password: '' });
+      setErrors({});
+      setLoginError('');
+
+      if (onLoginSuccess) {
+        setTimeout(() => onLoginSuccess(), 1000);
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      const errorMessage = error.code === 'auth/invalid-credential'
+        ? 'Invalid email or password'
+        : error.message || 'Login failed. Please try again.';
+
+      toast.update(toastId, {
+        render: errorMessage,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
+      setLoginError(errorMessage);
     }
   };
 
-  // ✅ Google Sign-In using Redirect (avoids COOP issues)
   const handleGoogleSignIn = async () => {
+    const toastId = toast.loading('Signing in with Google...');
+
     try {
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          email: user.email,
+          fullName: user.displayName || "",
+          photoURL: user.photoURL || "",
+          provider: "google",
+          createdAt: new Date().toISOString(),
+          preferences: [],
+          location: "",
+        });
+      }
+
+      toast.update(toastId, {
+        render: `Welcome ${user.displayName || user.email}!`,
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      if (onLoginSuccess) {
+        setTimeout(() => onLoginSuccess(), 1000);
+      }
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
-      alert("Google Sign-In failed. Please try again.");
+      toast.update(toastId, {
+        render: 'Google Sign-In failed. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
     }
   };
-
-  // Handle redirect result after Google login
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          const user = result.user;
-          const userRef = ref(db, `users/${user.uid}`);
-          const snapshot = await get(userRef);
-
-          if (!snapshot.exists()) {
-            await set(userRef, {
-              email: user.email,
-              fullName: user.displayName || "",
-              photoURL: user.photoURL || "",
-              provider: "google",
-              createdAt: new Date().toISOString(),
-            });
-          }
-
-          alert(`Welcome ${user.displayName || user.email}!`);
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect Sign-In error:", error);
-        alert("Google Sign-In failed. Please try again.");
-      });
-  }, []);
 
   return (
     <div className="login-container">
@@ -142,13 +159,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack }) =
 
         <form onSubmit={handleSubmit} className="login-form">
           <FormInput
-            label="Username or Email"
-            type="text"
-            name="usernameOrEmail"
-            value={formData.usernameOrEmail}
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
             onChange={handleInputChange}
-            error={errors.usernameOrEmail}
-            placeholder="Enter username or email"
+            error={errors.email}
+            placeholder="Enter your email"
             required
           />
 

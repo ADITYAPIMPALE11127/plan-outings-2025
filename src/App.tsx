@@ -3,6 +3,12 @@ import './App.css';
 import Dashboard from './components/Dashboard';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
+import ChatInterface from './components/ChatInterface';
+import { auth } from './firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * App Component
@@ -15,62 +21,69 @@ import RegisterForm from './components/RegisterForm';
  * Supports browser back/forward navigation and maintains history
  */
 
-type AppView = 'dashboard' | 'login' | 'register';
+type AppView = 'dashboard' | 'login' | 'register' | 'chat';
 
 function App() {
-  // State to track which view to show
   const [currentView, setCurrentView] = useState<AppView>('dashboard');
   const [history, setHistory] = useState<AppView[]>(['dashboard']);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  /**
-   * Navigate to a new view and update history
-   */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setCurrentView('chat');
+        setHistory(['chat']);
+      } else {
+        if (currentView === 'chat') {
+          setCurrentView('dashboard');
+          setHistory(['dashboard']);
+        }
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const navigateTo = (view: AppView) => {
     setCurrentView(view);
     setHistory(prev => [...prev, view]);
   };
 
-  /**
-   * Navigate back to previous view
-   */
   const navigateBack = () => {
     if (history.length > 1) {
       const newHistory = [...history];
-      newHistory.pop(); // Remove current view
+      newHistory.pop();
       const previousView = newHistory[newHistory.length - 1];
       setCurrentView(previousView);
       setHistory(newHistory);
     }
   };
 
-  /**
-   * Handle browser back/forward buttons
-   */
+  const handleLoginSuccess = () => {
+    navigateTo('chat');
+  };
+
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // If there's state in the history, use it
       if (event.state && event.state.view) {
         setCurrentView(event.state.view);
       } else {
-        // Otherwise go back to dashboard
-        setCurrentView('dashboard');
-        setHistory(['dashboard']);
+        setCurrentView(user ? 'chat' : 'dashboard');
+        setHistory([user ? 'chat' : 'dashboard']);
       }
     };
 
-    // Push initial state
-    window.history.replaceState({ view: 'dashboard' }, '', '/');
-
+    window.history.replaceState({ view: user ? 'chat' : 'dashboard' }, '', '/');
     window.addEventListener('popstate', handlePopState);
-    
+
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [user]);
 
-  /**
-   * Update browser history when view changes
-   */
   useEffect(() => {
     if (currentView !== 'dashboard') {
       window.history.pushState({ view: currentView }, '', `/${currentView}`);
@@ -79,9 +92,6 @@ function App() {
     }
   }, [currentView]);
 
-  /**
-   * Enhanced navigation functions with history management
-   */
   const enhancedNavigation = {
     goToLogin: () => navigateTo('login'),
     goToRegister: () => navigateTo('register'),
@@ -90,11 +100,32 @@ function App() {
     canGoBack: history.length > 1
   };
 
+  if (loading) {
+    return (
+      <div className="app-container">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
-      {/* Back Button - Show when not on dashboard */}
-      {currentView !== 'dashboard' && (
-        <button 
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
+      {currentView !== 'dashboard' && currentView !== 'chat' && (
+        <button
           className="back-button"
           onClick={enhancedNavigation.goBack}
           aria-label="Go back"
@@ -104,24 +135,27 @@ function App() {
         </button>
       )}
 
-      {/* Main Content */}
       {currentView === 'dashboard' && (
-        <Dashboard 
+        <Dashboard
           onNavigateToLogin={enhancedNavigation.goToLogin}
           onNavigateToRegister={enhancedNavigation.goToRegister}
         />
       )}
       {currentView === 'login' && (
-        <LoginForm 
+        <LoginForm
           onSwitchToRegister={enhancedNavigation.goToRegister}
           onGoBack={enhancedNavigation.goBack}
+          onLoginSuccess={handleLoginSuccess}
         />
       )}
       {currentView === 'register' && (
-        <RegisterForm 
+        <RegisterForm
           onSwitchToLogin={enhancedNavigation.goToLogin}
           onGoBack={enhancedNavigation.goBack}
         />
+      )}
+      {currentView === 'chat' && user && (
+        <ChatInterface />
       )}
     </div>
   );

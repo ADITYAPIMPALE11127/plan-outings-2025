@@ -6,9 +6,9 @@ import LocationDetector from './LocationDetector';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
 import './styles.css';
 import { auth, db, googleProvider } from "../firebaseConfig";
-import { signInWithPopup } from "firebase/auth";
-import { ref, get, set } from "firebase/database";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { toast } from 'react-toastify';
 // Predefined preference tags
 const PREFERENCE_TAGS = [
   'Action Movies',
@@ -65,17 +65,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
         if (value.length < 3) return 'Username must be at least 3 characters';
         if (value.length > 20) return 'Username must be at most 20 characters';
         if (!/^[a-zA-Z0-9_]+$/.test(value)) return 'Username can only contain letters, numbers, and underscore';
-
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        if (users.some((u: any) => u.username === value)) return 'Username already taken';
         return '';
 
       case 'email':
         if (!value) return 'Email is required';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
-
-        const emailUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        if (emailUsers.some((u: any) => u.email === value)) return 'Email already registered';
         return '';
 
       case 'password':
@@ -122,76 +116,104 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
     return Object.keys(newErrors).length === 0;
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  try {
-    // 1️⃣ Create user in Firebase Auth
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      formData.email,
-      formData.password
-    );
+    const toastId = toast.loading('Creating your account...');
 
-    const user = userCredential.user;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
 
-    // 2️⃣ Store additional user info in Realtime DB
-    await set(ref(db, `users/${user.uid}`), {
-      username: formData.username,
-      fullName: formData.fullName,
-      phoneNumber: formData.phoneNumber,
-      preferences: selectedPreferences,
-      location: formData.location,
-      createdAt: new Date().toISOString(),
-      provider: "email",
-    });
+      const user = userCredential.user;
 
-    alert(`Registration successful!\nWelcome, ${formData.fullName}!`);
-    setFormData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phoneNumber: '',
-      fullName: '',
-      location: '',
-    });
-    setSelectedPreferences([]);
-    setErrors({});
-    onSwitchToLogin();
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        preferences: selectedPreferences,
+        location: formData.location,
+        createdAt: new Date().toISOString(),
+        provider: "email",
+      });
 
-  } catch (error: any) {
-    console.error("Registration error:", error);
-    alert(`Registration failed: ${error.message}`);
-  }
-};
+      toast.update(toastId, {
+        render: `Welcome, ${formData.fullName}!`,
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phoneNumber: '',
+        fullName: '',
+        location: '',
+      });
+      setSelectedPreferences([]);
+      setErrors({});
+
+      setTimeout(() => onSwitchToLogin(), 1000);
+
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      toast.update(toastId, {
+        render: error.message || 'Registration failed. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
+    }
+  };
 
 
-  // ✅ Google Registration
   const handleGoogleSignIn = async () => {
+    const toastId = toast.loading('Signing in with Google...');
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const userRef = ref(db, `users/${user.uid}`);
-      const snapshot = await get(userRef);
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-      if (!snapshot.exists()) {
-        await set(userRef, {
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
           email: user.email,
           fullName: user.displayName || "",
           photoURL: user.photoURL || "",
           provider: "google",
           createdAt: new Date().toISOString(),
+          preferences: [],
+          location: "",
         });
       }
 
-      alert(`Welcome ${user.displayName || user.email}!`);
+      toast.update(toastId, {
+        render: `Welcome ${user.displayName || user.email}!`,
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
     } catch (error: any) {
       console.error("Google Sign-In error:", error);
-      alert("Google Sign-In failed. Please try again.");
+      toast.update(toastId, {
+        render: 'Google Sign-In failed. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000,
+      });
     }
   };
 
