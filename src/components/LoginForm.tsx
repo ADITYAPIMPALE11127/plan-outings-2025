@@ -4,7 +4,7 @@ import Button from './Button';
 import './styles.css';
 import { auth, db, googleProvider } from "../firebaseConfig";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, get, set } from "firebase/database";
 import { toast } from 'react-toastify'; 
 
 export interface LoginFormProps {
@@ -50,11 +50,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack, onL
       );
 
       const user = userCredential.user;
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userRef = ref(db, 'users/' + user.uid);
+      const userSnapshot = await get(userRef);
 
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.val();
         toast.update(toastId, {
           render: `Welcome back, ${userData.fullName}!`,
           type: 'success',
@@ -100,11 +100,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onGoBack, onL
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userRef = ref(db, 'users/' + user.uid);
+      const userSnapshot = await get(userRef);
 
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
+      if (!userSnapshot.exists()) {
+        await set(userRef, {
           uid: user.uid,
           email: user.email,
           fullName: user.displayName || "",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from '../firebaseConfig';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { ref, push, onValue, off, set, serverTimestamp } from 'firebase/database';
 import { signOut } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import './styles.css';
@@ -32,32 +32,49 @@ const ChatInterface: React.FC = () => {
     const fetchUserData = async () => {
       if (currentUser) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userDoc.exists()) {
-            setUserData(userDoc.data() as UserData);
-          }
+          const userRef = ref(db, 'users/' + currentUser.uid);
+          onValue(userRef, (snapshot) => {
+            if (snapshot.exists()) {
+              setUserData(snapshot.val() as UserData);
+            }
+            setLoading(false);
+          });
         } catch (error) {
           console.error('Error fetching user data:', error);
+          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchUserData();
   }, [currentUser]);
 
   useEffect(() => {
-    const q = query(collection(db, 'messages'), orderBy('timestamp', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs: Message[] = [];
-      snapshot.forEach((doc) => {
-        msgs.push({ id: doc.id, ...doc.data() } as Message);
-      });
-      setMessages(msgs);
+    const messagesRef = ref(db, 'messages');
+    
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const msgs: Message[] = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        })).sort((a, b) => {
+          // Sort by timestamp
+          const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timeA - timeB;
+        });
+        setMessages(msgs);
+      } else {
+        setMessages([]);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      off(messagesRef, 'value', unsubscribe);
+    };
   }, []);
 
   useEffect(() => {
@@ -74,11 +91,14 @@ const ChatInterface: React.FC = () => {
     if (!newMessage.trim() || !currentUser) return;
 
     try {
-      await addDoc(collection(db, 'messages'), {
+      const messagesRef = ref(db, 'messages');
+      const newMessageRef = push(messagesRef);
+      
+      await set(newMessageRef, {
         text: newMessage.trim(),
         userId: currentUser.uid,
         userName: userData?.fullName || currentUser.email || 'Anonymous',
-        timestamp: serverTimestamp(),
+        timestamp: new Date().toISOString(),
       });
 
       setNewMessage('');
@@ -149,8 +169,8 @@ const ChatInterface: React.FC = () => {
                 )}
                 <div className="chat-message-text">{message.text}</div>
                 <div className="chat-message-time">
-                  {message.timestamp?.toDate
-                    ? new Date(message.timestamp.toDate()).toLocaleTimeString([], {
+                  {message.timestamp
+                    ? new Date(message.timestamp).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })

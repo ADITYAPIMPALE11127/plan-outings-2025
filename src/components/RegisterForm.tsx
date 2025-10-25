@@ -7,8 +7,9 @@ import PasswordStrengthMeter from './PasswordStrengthMeter';
 import './styles.css';
 import { auth, db, googleProvider } from "../firebaseConfig";
 import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { ref, set, get } from "firebase/database";
 import { toast } from 'react-toastify';
+
 // Predefined preference tags
 const PREFERENCE_TAGS = [
   'Action Movies',
@@ -132,7 +133,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
 
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await set(ref(db, 'users/' + user.uid), {
         uid: user.uid,
         username: formData.username,
         email: formData.email,
@@ -176,7 +177,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
     }
   };
 
-
   const handleGoogleSignIn = async () => {
     const toastId = toast.loading('Signing in with Google...');
 
@@ -184,11 +184,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const userRef = ref(db, 'users/' + user.uid);
+      const userSnapshot = await get(userRef);
 
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
+      if (!userSnapshot.exists()) {
+        await set(userRef, {
           uid: user.uid,
           email: user.email,
           fullName: user.displayName || "",
