@@ -5,6 +5,7 @@ import GroupManagementModal from './GroupManagementModal';
 import EmojiPickerComponent from './EmojiPicker';
 import PollCreationModal from './PollCreationModal';
 import PollMessage from './PollMessage';
+import MessageReactions from './MessageReactions'; // Import the reactions component
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles.css';
@@ -19,6 +20,9 @@ interface Message {
     groupId: string;
     type?: 'text' | 'poll';
     poll?: any;
+    reactions?: { // Add reactions field
+        [emoji: string]: string[]; // emoji -> array of user IDs who reacted
+    };
 }
 
 interface Group {
@@ -70,7 +74,8 @@ const GroupChat: React.FC<GroupChatProps> = ({
             if (data) {
                 const msgs: Message[] = Object.keys(data).map(key => ({
                     id: key,
-                    ...data[key]
+                    ...data[key],
+                    reactions: data[key].reactions || {} // Ensure reactions exist
                 })).sort((a, b) => {
                     const timeA = new Date(a.timestamp).getTime();
                     const timeB = new Date(b.timestamp).getTime();
@@ -111,6 +116,7 @@ const GroupChat: React.FC<GroupChatProps> = ({
                 timestamp: new Date().toISOString(),
                 groupId: group.id,
                 type: 'text',
+                reactions: {} // Initialize empty reactions for new messages
             };
 
             await set(newMessageRef, messageData);
@@ -156,6 +162,7 @@ const GroupChat: React.FC<GroupChatProps> = ({
                 groupId: group.id,
                 type: 'poll',
                 poll: poll,
+                reactions: {} // Initialize empty reactions for polls too
             };
 
             await set(newMessageRef, messageData);
@@ -265,6 +272,14 @@ const GroupChat: React.FC<GroupChatProps> = ({
                                 ) : (
                                     <div className="chat-message-text">{message.text}</div>
                                 )}
+
+                                {/* Message Reactions - Add this component below message content */}
+                                <MessageReactions
+                                    messageId={message.id}
+                                    groupId={group.id}
+                                    reactions={message.reactions || {}}
+                                    currentUser={currentUser}
+                                />
 
                                 <div className="chat-message-time">
                                     {new Date(message.timestamp).toLocaleTimeString([], {

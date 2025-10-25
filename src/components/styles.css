@@ -3572,3 +3572,80 @@ html {
     color: #999;
     font-style: italic;
 }
+
+
+ /* message reactions   */
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+    align-items: center;
+}
+
+.reaction-option,
+.reaction {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    min-height: 24px;
+}
+
+.reaction-option {
+    opacity: 0.6;
+    background: transparent;
+    border: 1px dashed #ccc;
+}
+
+.reaction-option:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #999;
+}
+
+.reaction:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: #bbb;
+    transform: translateY(-1px);
+}
+
+.reaction-user-reacted {
+    background: rgba(88, 101, 242, 0.15);
+    border-color: rgba(88, 101, 242, 0.4);
+}
+
+.reaction-user-reacted:hover {
+    background: rgba(88, 101, 242, 0.2);
+}
+
+.reaction-emoji {
+    font-size: 14px;
+}
+
+.reaction-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    min-width: 8px;
+}
+
+.reaction-user-reacted .reaction-count {
+    color: #5865f2;
+}
+
+/* For own messages - align reactions to the right */
+.chat-message-own .message-reactions {
+    justify-content: flex-end;
+}
+
+/* For other messages - align reactions to the left */
+.chat-message-other .message-reactions {
+    justify-content: flex-start;
+}
