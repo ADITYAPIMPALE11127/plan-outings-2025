@@ -1,0 +1,151 @@
+/* SuggestPlaces Component Styles */
+.suggest-places-container {
+  position: fixed;
+  bottom: 80px; /* Position above chat input */
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggest-places-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+  transition: all 0.3s ease;
+  min-width: 160px;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.suggest-places-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+  background: linear-gradient(135deg, #4752c4 0%, #3c45a5 100%);
+}
+
+.suggest-places-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+}
+
+.suggest-places-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.suggest-places-btn.loading {
+  background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+  animation: pulse 2s infinite;
+}
+
+.suggest-places-btn .icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggest-places-btn span:not(.icon) {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Spinner Animation */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .suggest-places-container {
+    bottom: 70px;
+    right: 15px;
+  }
+  
+  .suggest-places-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: 140px;
+  }
+  
+  .suggest-places-btn .icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .suggest-places-container {
+    bottom: 60px;
+    right: 10px;
+  }
+  
+  .suggest-places-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    min-width: 120px;
+    gap: 6px;
+  }
+  
+  .suggest-places-btn .icon {
+    font-size: 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .suggest-places-btn {
+    background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+  }
+  
+  .suggest-places-btn:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.5);
+  }
+}
+
+/* Animation for button appearance */
+.suggest-places-container {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

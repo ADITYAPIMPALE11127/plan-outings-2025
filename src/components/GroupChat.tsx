@@ -7,6 +7,8 @@ import PollCreationModal from './PollCreationModal';
 import PollMessage from './PollMessage';
 import MessageReactions from './MessageReactions';
 import ImageAttachment from './ImageAttachment';
+import SuggestPlaces from './SuggestPlaces';
+import SuggestMovie from './SuggestMovie';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles.css';
@@ -210,6 +212,35 @@ const GroupChat: React.FC<GroupChatProps> = ({
         setSelectedImage(null);
     };
 
+    const handleSendSuggestionMessage = async (messageText: string) => {
+        if (!currentUser) return;
+
+        try {
+            const messagesRef = ref(db, `groupMessages/${group.id}`);
+            const newMessageRef = push(messagesRef);
+
+            const messageData = {
+                userId: currentUser.uid,
+                userName: userData?.fullName || currentUser.email || 'Anonymous',
+                timestamp: new Date().toISOString(),
+                groupId: group.id,
+                type: 'text',
+                text: messageText,
+                reactions: {}
+            };
+
+            await set(newMessageRef, messageData);
+
+            toast.success('Suggestion sent!', {
+                position: "bottom-right",
+                autoClose: 2000,
+            });
+        } catch (error) {
+            console.error('Error sending suggestion message:', error);
+            toast.error('Failed to send suggestion');
+        }
+    };
+
     const isAdmin = group.admin === currentUser?.uid;
 
     return (
@@ -400,6 +431,31 @@ const GroupChat: React.FC<GroupChatProps> = ({
                     </div>
                 )}
             </form>
+
+            {/* Suggest Places Component */}
+            <SuggestPlaces
+                onSendMessage={handleSendSuggestionMessage}
+                chatMessages={messages.map(msg => ({
+                    sender: msg.userName,
+                    content: msg.text,
+                    timestamp: msg.timestamp
+                }))}
+                userLocation={userData?.location ? {
+                    latitude: 40.7128, // Default NYC coordinates - you can enhance this with actual location
+                    longitude: -74.0060,
+                    city: userData.location
+                } : undefined}
+            />
+
+            {/* Suggest Movie Component */}
+            <SuggestMovie
+                onSendMessage={handleSendSuggestionMessage}
+                chatMessages={messages.map(msg => ({
+                    sender: msg.userName,
+                    content: msg.text,
+                    timestamp: msg.timestamp
+                }))}
+            />
         </div>
     );
 };
