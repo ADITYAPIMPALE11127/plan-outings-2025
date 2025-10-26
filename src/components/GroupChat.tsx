@@ -5,7 +5,8 @@ import GroupManagementModal from './GroupManagementModal';
 import EmojiPickerComponent from './EmojiPicker';
 import PollCreationModal from './PollCreationModal';
 import PollMessage from './PollMessage';
-import MessageReactions from './MessageReactions'; // Import the reactions component
+import MessageReactions from './MessageReactions';
+import ImageAttachment from './ImageAttachment';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles.css';
@@ -18,10 +19,11 @@ interface Message {
     userName: string;
     timestamp: string;
     groupId: string;
-    type?: 'text' | 'poll';
+    type?: 'text' | 'poll' | 'image';
     poll?: any;
-    reactions?: { // Add reactions field
-        [emoji: string]: string[]; // emoji -> array of user IDs who reacted
+    imageUrl?: string;
+    reactions?: {
+        [emoji: string]: string[];
     };
 }
 
@@ -53,6 +55,7 @@ const GroupChat: React.FC<GroupChatProps> = ({
     const [newMessage, setNewMessage] = useState('');
     const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
     const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Setup real-time message notifications for this group
@@ -103,31 +106,38 @@ const GroupChat: React.FC<GroupChatProps> = ({
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!newMessage.trim() || !currentUser) return;
+        if ((!newMessage.trim() && !selectedImage) || !currentUser) return;
 
         try {
             const messagesRef = ref(db, `groupMessages/${group.id}`);
             const newMessageRef = push(messagesRef);
 
-            const messageData = {
-                text: newMessage.trim(),
+            const messageData: any = {
                 userId: currentUser.uid,
                 userName: userData?.fullName || currentUser.email || 'Anonymous',
                 timestamp: new Date().toISOString(),
                 groupId: group.id,
-                type: 'text',
-                reactions: {} // Initialize empty reactions for new messages
+                reactions: {}
             };
+
+            if (selectedImage) {
+                messageData.type = 'image';
+                messageData.imageUrl = selectedImage;
+                messageData.text = newMessage.trim() || '';
+            } else {
+                messageData.type = 'text';
+                messageData.text = newMessage.trim();
+            }
 
             await set(newMessageRef, messageData);
 
-            // Show success toast for sender
             toast.success('Message sent!', {
                 position: "bottom-right",
                 autoClose: 2000,
             });
 
             setNewMessage('');
+            setSelectedImage(null);
         } catch (error) {
             console.error('Error sending message:', error);
             toast.error('Failed to send message');
@@ -186,6 +196,18 @@ const GroupChat: React.FC<GroupChatProps> = ({
         if (input) {
             input.focus();
         }
+    };
+
+    const handleImageSelect = (imageUrl: string) => {
+        setSelectedImage(imageUrl);
+        toast.success('Image attached!', {
+            position: "bottom-right",
+            autoClose: 2000,
+        });
+    };
+
+    const handleRemoveImage = () => {
+        setSelectedImage(null);
     };
 
     const isAdmin = group.admin === currentUser?.uid;
@@ -269,6 +291,17 @@ const GroupChat: React.FC<GroupChatProps> = ({
                                         messageId={message.id}
                                         groupId={group.id}
                                     />
+                                ) : message.type === 'image' ? (
+                                    <div className="chat-message-image-container">
+                                        <img
+                                            src={message.imageUrl}
+                                            alt="Shared image"
+                                            className="chat-message-image"
+                                        />
+                                        {message.text && (
+                                            <div className="chat-message-text">{message.text}</div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="chat-message-text">{message.text}</div>
                                 )}
@@ -295,18 +328,32 @@ const GroupChat: React.FC<GroupChatProps> = ({
             </div>
 
             <form onSubmit={handleSendMessage} className="group-chat-input-form">
+                {selectedImage && (
+                    <div className="image-preview-container">
+                        <img src={selectedImage} alt="Preview" className="image-preview" />
+                        <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="image-preview-remove"
+                            title="Remove image"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
                 <div className="chat-input-container">
                     <div className="chat-input-wrapper">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder={`Suggest an outing idea in ${group.name}...`}
+                            placeholder={selectedImage ? "Add a caption..." : `Suggest an outing idea in ${group.name}...`}
                             className="chat-input"
                             maxLength={500}
                         />
 
-                        {/* Poll Button */}
+                        <ImageAttachment onImageSelect={handleImageSelect} />
+
                         <button
                             type="button"
                             onClick={() => setIsPollModalOpen(true)}
@@ -323,17 +370,18 @@ const GroupChat: React.FC<GroupChatProps> = ({
                     </div>
                     <button
                         type="submit"
-                        disabled={!newMessage.trim()}
+                        disabled={!newMessage.trim() && !selectedImage}
                         className="chat-send-button"
                     >
                         <span className="chat-send-icon">→</span>
                     </button>
                 </div>
 
-                {/* Character counter */}
-                <div className="character-counter">
-                    {newMessage.length}/500
-                </div>
+                {!selectedImage && (
+                    <div className="character-counter">
+                        {newMessage.length}/500
+                    </div>
+                )}
             </form>
         </div>
     );

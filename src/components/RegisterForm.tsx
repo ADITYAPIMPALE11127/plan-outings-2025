@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import FormInput from './FormInput';
 import Button from './Button';
 import TagSelector from './TagSelector';
-import LocationDetector from './LocationDetector';
 import PasswordStrengthMeter from './PasswordStrengthMeter';
 import './styles.css';
 import { auth, db, googleProvider } from "../firebaseConfig";
@@ -22,17 +21,6 @@ const PREFERENCE_TAGS = [
   'Shopping',
 ];
 
-// Indian cities for location dropdown
-const INDIAN_CITIES = [
-  'Mumbai',
-  'Delhi',
-  'Bangalore',
-  'Hyderabad',
-  'Chennai',
-  'Kolkata',
-  'Pune',
-  'Patna',
-];
 
 export interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -47,7 +35,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
     confirmPassword: '',
     phoneNumber: '',
     fullName: '',
-    location: '',
   });
 
   const [selectedPreferences, setSelectedPreferences] = useState<string[]>([]);
@@ -93,10 +80,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
         if (value.length < 2) return 'Full name must be at least 2 characters';
         return '';
 
-      case 'location':
-        if (!value) return 'Location is required';
-        return '';
-
       default:
         return '';
     }
@@ -140,7 +123,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
         fullName: formData.fullName,
         phoneNumber: formData.phoneNumber,
         preferences: selectedPreferences,
-        location: formData.location,
         createdAt: new Date().toISOString(),
         provider: "email",
       });
@@ -159,7 +141,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
         confirmPassword: '',
         phoneNumber: '',
         fullName: '',
-        location: '',
       });
       setSelectedPreferences([]);
       setErrors({});
@@ -196,7 +177,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
           provider: "google",
           createdAt: new Date().toISOString(),
           preferences: [],
-          location: "",
         });
       }
 
@@ -311,18 +291,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, onGoBack }
             selectedTags={selectedPreferences}
             onChange={setSelectedPreferences}
             error={errors.preferences}
-            required
-          />
-
-          <LocationDetector
-            label="Location"
-            cities={INDIAN_CITIES}
-            selectedCity={formData.location}
-            onChange={(city) => {
-              setFormData((prev) => ({ ...prev, location: city }));
-              if (errors.location) setErrors((prev) => ({ ...prev, location: '' }));
-            }}
-            error={errors.location}
             required
           />
 
