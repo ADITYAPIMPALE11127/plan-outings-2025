@@ -20,6 +20,8 @@ A modern, real-time group outing planning application built with React 19, TypeS
 - **Message Reactions** - React to messages with emojis
 - **Location Preferences** - Store user location preferences for outing suggestions
 - **Activity Tags** - Tag-based preference system for outing recommendations
+- **AI Movie Suggestions** - Get personalized movie recommendations based on group conversations
+- **AI Place Suggestions** - Discover nearby places and activities for outings using location data
 
 ## 🛠 Tech Stack
 
@@ -68,6 +70,8 @@ plan-outings-2025/
 │   │   ├── PollCreationModal.tsx   # Poll creation interface
 │   │   ├── PollMessage.tsx         # Interactive poll display
 │   │   ├── RegisterForm.tsx        # User registration form
+│   │   ├── SuggestMovie.tsx        # AI-powered movie suggestion component
+│   │   ├── SuggestPlaces.tsx       # AI-powered place suggestion component
 │   │   ├── TagSelector.tsx         # Multi-select tag component
 │   │   ├── styles.css              # Global component styles
 │   │   ├── types.ts                # TypeScript interfaces
@@ -151,6 +155,8 @@ Group List → Select Group → Chat Interface
   - Results visible to all members
 - **Images:** Share photos with optional captions
 - **Reactions:** React to any message with emojis
+- **AI Movie Suggestions:** Get personalized movie recommendations based on group conversations
+- **AI Place Suggestions:** Discover nearby places and activities for outings using location data
 
 ### 4. Notification System
 ```
