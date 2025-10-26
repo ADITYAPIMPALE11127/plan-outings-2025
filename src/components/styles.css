@@ -3660,16 +3660,14 @@ html {
     border-radius: 0.5rem;
     transition: all 0.2s ease;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-right: 75px;
 }
 
 .image-attach-button:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(15, 16, 18, 0.05);
 }
 
 .image-attach-button:disabled {
-    opacity: 0.5;
     cursor: not-allowed;
 }
 

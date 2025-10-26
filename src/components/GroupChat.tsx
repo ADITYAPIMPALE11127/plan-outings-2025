@@ -352,21 +352,38 @@ const GroupChat: React.FC<GroupChatProps> = ({
                             maxLength={500}
                         />
 
-                        <ImageAttachment onImageSelect={handleImageSelect} />
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            marginLeft: '8px'
+                        }}>
+                            <ImageAttachment onImageSelect={handleImageSelect} />
 
-                        <button
-                            type="button"
-                            onClick={() => setIsPollModalOpen(true)}
-                            className="poll-create-button"
-                            title="Create poll"
-                        >
-                            <span className="poll-icon">📊</span>
-                        </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsPollModalOpen(true)}
+                                className="poll-create-button"
+                                title="Create poll"
+                                style={{ 
+                                    border: 'none', 
+                                    background: 'none', 
+                                    cursor: 'pointer',
+                                    padding: '8px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <span className="poll-icon">📊</span>
+                            </button>
 
-                        <EmojiPickerComponent
-                            onEmojiClick={handleEmojiClick}
-                            position="top"
-                        />
+                            <EmojiPickerComponent
+                                onEmojiClick={handleEmojiClick}
+                                position="top"
+                            />
+                        </div>
                     </div>
                     <button
                         type="submit"
